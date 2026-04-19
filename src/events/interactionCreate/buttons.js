@@ -612,7 +612,7 @@ async function handleReadIntroContinue(client, interaction) {
 
     // 5️⃣ Ephemeral confirmation
     await interaction.reply({
-      content: `✅ You are only one step away! Read the rules in ${rulesChannel} and click "I Accept" to continue.`,
+      content: `✅ You are only one step away ! Read the rules in ${rulesChannel} and click "I Accept" to continue.`,
       ephemeral: true,
     });
   } catch (err) {
@@ -642,7 +642,7 @@ async function handleVerifyUnverifiedUser(client, interaction) {
 
     // 1️⃣ DM user with explanation and form link
     try {
-      const formUrl = process.env.WRONG_INVITE_FORM_URL;
+      const formUrl = "https://fathersfamily.com";
 
       await member.send({
         embeds: [
