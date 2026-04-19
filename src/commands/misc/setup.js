@@ -80,7 +80,7 @@ module.exports = {
           "• Participate in discussions and events\n\n" +
           "**Once you have read the introduction, click the button below to continue.**\n\n" +
           "────────────────────\n\n" +
-          "📜 **After clicking Continue**, please go to the **Family Rules** channel:\n" +
+          "📜 **Once you have read the intro & clicked continue**, please go to the **Family Rules** channel:\n" +
           `${rulesChannel ? `<#${rulesChannel.id}>` : "**#family-rules**"}`,
       )
       .setFooter({
