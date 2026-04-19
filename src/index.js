@@ -30,7 +30,14 @@ const client = new Client({
     IntentsBitField.Flags.MessageContent,
     IntentsBitField.Flags.GuildInvites,
   ],
-  partials: [Partials.Message, Partials.Channel, Partials.Reaction],
+  partials: [
+    Partials.Message,
+    Partials.Channel,
+    Partials.Reaction,
+    Partials.GuildMember,
+    Partials.GuildMember, // ← This is the most important for guildMemberRemove
+    Partials.User,
+  ],
 });
 
 app.use(cors());

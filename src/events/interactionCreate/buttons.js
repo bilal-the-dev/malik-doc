@@ -247,7 +247,7 @@ async function handleApproveRejectUser(
     .setTimestamp();
 
   await interaction.update({
-    content: `**Status:** ${status}\n**Moderator:** <@${moderatorId}>`,
+    content: `**Status:** ${status}\n`,
     embeds: [updatedEmbed],
     components: [], // Removes all buttons
   });
@@ -612,7 +612,7 @@ async function handleReadIntroContinue(client, interaction) {
 
     // 5️⃣ Ephemeral confirmation
     await interaction.reply({
-      content: `✅ Successfully linked your account! Read the rules in ${rulesChannel} and click "I Accept" to continue.`,
+      content: `✅ You are only one step away! Read the rules in ${rulesChannel} and click "I Accept" to continue.`,
       ephemeral: true,
     });
   } catch (err) {
