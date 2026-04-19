@@ -67,10 +67,9 @@ module.exports = {
       components: [rulesRow],
     });
 
-    // WELCOME EMBED
     const welcomeEmbed = new EmbedBuilder()
       .setTitle("👋 Welcome to the Server!")
-      .setColor("Green")
+      .setColor("#00FF00")
       .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
       .setDescription(
         `Welcome to **${interaction.guild.name}**!\n\n` +
@@ -79,13 +78,15 @@ module.exports = {
           "• A place to connect with others\n" +
           "• Share knowledge and ideas\n" +
           "• Participate in discussions and events\n\n" +
-          "Once you've read the introduction, click the button below to continue.",
+          "**Once you have read the introduction, click the button below to continue.**\n\n" +
+          "────────────────────\n\n" +
+          "📜 **After clicking Continue**, please go to the **Family Rules** channel:\n" +
+          `${rulesChannel ? `<#${rulesChannel.id}>` : "**#family-rules**"}`,
       )
       .setFooter({
         text: `${interaction.guild.name} • Welcome`,
         iconURL: interaction.guild.iconURL({ dynamic: true }),
-      })
-      .setTimestamp();
+      });
 
     const welcomeRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
