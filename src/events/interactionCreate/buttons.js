@@ -133,32 +133,37 @@ async function handleSelectBtn(client, interaction, id) {
     });
   }
 
-  // Build the embed
+  // Improved Clean Embed
   const embed = new EmbedBuilder()
     .setTitle("📝 New Group Approval Request")
-    .setColor("Orange")
+    .setColor(0xffa500) // Orange
     .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
+    .setTimestamp()
     .addFields(
       {
-        name: "👤 Discord",
+        name: "👤 Discord User",
         value: `<@${userId}> (${interaction.user.tag})`,
         inline: false,
       },
       {
         name: "📧 Email",
-        value: userData.email || "Not provided",
-        inline: true,
+        value: `\`${userData.email || "Not provided"}\``,
+        inline: false,
       },
       {
         name: "🔗 Invite URL",
-        value: userData.inviteUrl || "Unknown",
-        inline: true,
+        value: userData.inviteUrl ? `\`${userData.inviteUrl}\`` : "`Unknown`",
+        inline: false,
       },
-      { name: "🏷️ Selected Group", value: group, inline: true },
       {
-        name: "📆 Joined",
+        name: "🏷️ Selected Group",
+        value: `**${group}**`,
+        inline: false,
+      },
+      {
+        name: "📆 Account Joined Server",
         value: `<t:${Math.floor(interaction.member.joinedTimestamp / 1000)}:F>`,
-        inline: true,
+        inline: false,
       },
     );
 
@@ -181,10 +186,11 @@ async function handleSelectBtn(client, interaction, id) {
 
   await interaction.reply({
     content:
-      "✅ You're now in the approval queue. Please wait for a moderator to approve you.",
+      "✅ You've been added to the approval queue. A moderator will review your request soon.",
     ephemeral: true,
   });
 }
+
 async function handleApproveRejectUser(
   client,
   interaction,
@@ -195,7 +201,6 @@ async function handleApproveRejectUser(
     ? process.env.MODERATOR_ROLE_ID.split(",").map((id) => id.trim())
     : [];
 
-  // Check if user has ANY of the allowed moderator roles
   const hasModeratorRole = moderatorRoleIds.some((roleId) =>
     interaction.member.roles.cache.has(roleId),
   );
@@ -207,7 +212,9 @@ async function handleApproveRejectUser(
     });
   }
 
-  const targetMember = await interaction.guild.members.fetch(targetId);
+  const targetMember = await interaction.guild.members
+    .fetch(targetId)
+    .catch(() => null);
   const data = await UserInvite.findOne({ discordId: targetId });
 
   if (!data) {
@@ -217,14 +224,46 @@ async function handleApproveRejectUser(
     });
   }
 
+  const moderatorTag = interaction.user.tag;
+  const moderatorId = interaction.user.id;
+  const status = decision === "approve" ? "✅ **Approved**" : "❌ **Denied**";
+  const color = decision === "approve" ? 0x00ff00 : 0xff0000;
+
+  // Update the original message (remove buttons + show who took action)
+  const originalMessage = interaction.message;
+
+  const updatedEmbed = EmbedBuilder.from(originalMessage.embeds[0])
+    .setColor(color)
+    .setTitle(
+      decision === "approve"
+        ? "✅ Group Request Approved"
+        : "❌ Group Request Denied",
+    )
+    .addFields({
+      name: "🔨 Action Taken By",
+      value: `<@${moderatorId}> (${moderatorTag})`,
+      inline: false,
+    })
+    .setTimestamp();
+
+  await interaction.update({
+    content: `**Status:** ${status}\n**Moderator:** <@${moderatorId}>`,
+    embeds: [updatedEmbed],
+    components: [], // Removes all buttons
+  });
+
+  // === Approve Logic ===
   if (decision === "approve") {
     const roleId =
       data.onboarding.selectedGroup === "Brotherhood"
         ? process.env.ROLE_BROTHERHOOD_ID
         : process.env.ROLE_SISTERHOOD_ID;
 
-    // ✅ Add both roles
-    await targetMember.roles.add([roleId, process.env.VERIFIED_ROLE_ID]);
+    if (targetMember) {
+      await targetMember.roles
+        .add([roleId, process.env.VERIFIED_ROLE_ID])
+        .catch(console.error);
+    }
 
     await UserInvite.updateOne(
       { discordId: targetId },
@@ -244,15 +283,13 @@ async function handleApproveRejectUser(
       );
 
       const contact = contactsRes.data.contacts.find(
-        (c) => c.email?.toLowerCase() === data.email.toLowerCase(),
+        (c) => c.email?.toLowerCase() === data.email?.toLowerCase(),
       );
 
       if (contact) {
         await axios.put(
           `https://rest.gohighlevel.com/v1/contacts/${contact.id}`,
-          {
-            tags: ["Discord Member"],
-          },
+          { tags: ["Discord Member"] },
           {
             headers: {
               Authorization: `Bearer ${process.env.GHL_API_KEY}`,
@@ -265,24 +302,22 @@ async function handleApproveRejectUser(
       console.error("❌ GHL Tagging failed:", err.message);
     }
 
-    await interaction.reply({
-      content: "User approved and roles assigned.",
-      ephemeral: true,
-    });
-
-    await targetMember.send(
-      "You have been approved and got the Server Access!",
-    );
+    if (targetMember) {
+      await targetMember
+        .send("You have been approved and got the Server Access!")
+        .catch(() => {});
+    }
   }
 
+  // === Deny Logic ===
   if (decision === "deny") {
-    await targetMember.send(
-      "Sorry, your access request was denied. If this is an error, please contact support.",
-    );
-    await interaction.reply({
-      content: "User denied and notified via DM.",
-      ephemeral: true,
-    });
+    if (targetMember) {
+      await targetMember
+        .send(
+          "Sorry, your access request was denied. If this is an error, please contact support.",
+        )
+        .catch(() => {});
+    }
   }
 }
 
@@ -478,15 +513,6 @@ async function handleReadConfirm(client, interaction, userId) {
     SendMessages: false,
     ReadMessageHistory: true,
   });
-
-  // 👻 Ghost ping the user
-  const ghostMessage = await rulesChannel.send({
-    content: `<@${user.id}>`,
-  });
-
-  setTimeout(() => {
-    ghostMessage.delete().catch(() => null);
-  }, 1000);
 
   await interaction.reply({
     content: `✅ Successfully linked your account, read thre rules and click on "I Accept" in rules channel.`,
