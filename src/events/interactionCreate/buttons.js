@@ -191,7 +191,16 @@ async function handleApproveRejectUser(
   decision,
   targetId,
 ) {
-  if (!interaction.member.roles.cache.has(process.env.MODERATOR_ROLE_ID)) {
+  const moderatorRoleIds = process.env.MODERATOR_ROLE_ID
+    ? process.env.MODERATOR_ROLE_ID.split(",").map((id) => id.trim())
+    : [];
+
+  // Check if user has ANY of the allowed moderator roles
+  const hasModeratorRole = moderatorRoleIds.some((roleId) =>
+    interaction.member.roles.cache.has(roleId),
+  );
+
+  if (!hasModeratorRole) {
     return interaction.reply({
       content: "You are not authorized.",
       ephemeral: true,
