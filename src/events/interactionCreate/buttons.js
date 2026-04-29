@@ -601,15 +601,6 @@ async function handleReadIntroContinue(client, interaction) {
       ReadMessageHistory: true,
     });
 
-    // 4️⃣ Ghost ping the user
-    const ghostMessage = await rulesChannel.send({
-      content: `<@${user.id}>`,
-    });
-
-    setTimeout(() => {
-      ghostMessage.delete().catch(() => null);
-    }, 1000);
-
     // 5️⃣ Ephemeral confirmation
     await interaction.reply({
       content: `✅ You are only one step away ! Read the rules in ${rulesChannel} and click "I Accept" to continue.`,
